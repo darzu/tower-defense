@@ -2,8 +2,9 @@
     "name": "tower defense",
     "dependencies": {
         "device": "*",
-        "arcade-tilemap-a-star": "github:jwunderl/arcade-tilemap-a-star#v0.1.7",
-        "tilemaps": "github:microsoft/pxt-tilemaps#v1.7.1"
+        "tilemaps": "github:microsoft/pxt-tilemaps#v1.7.1",
+        "arcade-tilemap-a-star": "github:jwunderl/arcade-tilemap-a-star#get-on-the-path",
+        "arcade-minimap": "github:darzu/arcade-minimap#v0.4.1"
     },
     "description": "",
     "files": [
