@@ -337,7 +337,7 @@ game.onUpdateInterval(100, function () {
         minimap.includeSprite(minimap2, cursor, MinimapSpriteScale.Double)
     }
 })
-game.onUpdateInterval(1000, function () {
+game.onUpdateInterval(200, function () {
     mob = sprites.create(img`
 . . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . . 
@@ -358,4 +358,5 @@ game.onUpdateInterval(1000, function () {
 `, SpriteKind.Enemy)
     tiles.placeOnRandomTile(mob, myTiles.tile4)
     scene.followPath(mob, path, enemySpeed)
+    info.changeScoreBy(1)
 })
