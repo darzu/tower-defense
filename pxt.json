@@ -4,7 +4,9 @@
         "device": "*",
         "tilemaps": "github:microsoft/pxt-tilemaps#v1.7.1",
         "arcade-tilemap-a-star": "github:jwunderl/arcade-tilemap-a-star#v0.2.1",
-        "arcade-minimap": "github:darzu/arcade-minimap#v0.4.1"
+        "arcade-minimap": "github:darzu/arcade-minimap#v0.4.1",
+        "pxt-status-bar": "github:jwunderl/pxt-status-bar#master",
+        "arcade-sprite-data": "github:microsoft/arcade-sprite-data#v0.0.5"
     },
     "description": "",
     "files": [

@@ -194,21 +194,55 @@ f f f f f f f f f f f f f f f f
 . . . . . . . . . . . . . . . . 
 `
 }
+function spawn_mob () {
+    mob = sprites.create(img`
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . 4 4 . . . . . . . 
+. . . . . . 4 4 4 4 . . . . . . 
+. . . . . 4 4 4 4 4 4 . . . . . 
+. . . . . 4 4 4 4 4 4 . . . . . 
+. . . . . . 4 4 4 4 . . . . . . 
+. . . . . . . 4 4 . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+`, SpriteKind.Enemy)
+    healthbar = statusbars.create(6, 1, StatusBarKind.Health)
+    healthbar.attachToSprite(mob)
+    healthbar.max = 3
+    enemiesLeft += -1
+    tiles.placeOnRandomTile(mob, myTiles.tile4)
+    if (path) {
+        scene.followPath(mob, path, enemySpeed)
+    }
+}
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
     minimapVisible = !(minimapVisible)
     minimapSprite.setFlag(SpriteFlag.Invisible, !(minimapVisible))
 })
 sprites.onOverlap(SpriteKind.Enemy, SpriteKind.Projectile, function (sprite, otherSprite) {
-    sprite.destroy()
+    healthbar = statusbars.getStatusBarAttachedTo(StatusBarKind.Health, sprite)
+    healthbar.value += -1
+    if (healthbar.value == 0) {
+        sprite.destroy()
+        info.changeScoreBy(1)
+    }
     otherSprite.destroy()
-    info.changeScoreBy(1)
 })
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     build_tower()
 })
 info.onCountdownEnd(function () {
     isSpawning = true
-    enemiesLeft = 20
+    enemiesLeft = nextWaveSize
+    nextWaveSize += 20
+    nextWaveTime += 5
 })
 scene.onOverlapTile(SpriteKind.Enemy, myTiles.tile2, function (sprite, location) {
     sprite.destroy()
@@ -257,21 +291,22 @@ function try_update_path () {
     }
 }
 let projectile: Sprite = null
-let mob: Sprite = null
 let minimap2: minimap.Minimap = null
-let path: tiles.Location[] = []
 let tower: Sprite = null
 let newPath: tiles.Location[] = []
 let buildLoc: tiles.Location = null
+let path: tiles.Location[] = []
 let enemiesLeft = 0
+let healthbar: StatusBarSprite = null
+let mob: Sprite = null
+let nextWaveSize = 0
 let isSpawning = false
+let enemySpeed = 0
 let minimapSprite: Sprite = null
 let minimapVisible = false
 let spawnLoc: tiles.Location = null
 let homeLoc: tiles.Location = null
 let cursor: Sprite = null
-let enemySpeed = 0
-enemySpeed = 20
 tiles.setTilemap(tiles.createTilemap(
             hex`10000e000505050505050505050505050505050505020505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505040505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505`,
             img`
@@ -339,10 +374,13 @@ minimapSprite = sprites.create(img`
 minimapSprite.setFlag(SpriteFlag.RelativeToCamera, true)
 minimapSprite.z = 10
 try_update_path()
-info.startCountdown(10)
+enemySpeed = 10
+isSpawning = false
+nextWaveSize = 20
+let nextWaveTime = 2
+info.startCountdown(nextWaveTime)
 info.setScore(20)
 info.setLife(3)
-isSpawning = false
 game.onUpdateInterval(100, function () {
     if (minimapVisible) {
         minimap2 = minimap.minimap(MinimapScale.Quarter, 100, 13)
@@ -357,52 +395,35 @@ game.onUpdateInterval(100, function () {
 })
 game.onUpdateInterval(500, function () {
     if (isSpawning && 0 < enemiesLeft) {
-        mob = sprites.create(img`
-. . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . 
-. . . . . . . 4 4 . . . . . . . 
-. . . . . . 4 4 4 4 . . . . . . 
-. . . . . 4 4 4 4 4 4 . . . . . 
-. . . . . 4 4 4 4 4 4 . . . . . 
-. . . . . . 4 4 4 4 . . . . . . 
-. . . . . . . 4 4 . . . . . . . 
-. . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . 
-`, SpriteKind.Enemy)
-        enemiesLeft += -1
-        tiles.placeOnRandomTile(mob, myTiles.tile4)
-        if (path) {
-            scene.followPath(mob, path, enemySpeed)
-        }
+        spawn_mob()
+    } else if (isSpawning) {
+        isSpawning = false
+        info.startCountdown(nextWaveTime)
     }
 })
 game.onUpdateInterval(1000, function () {
-    for (let value of sprites.allOfKind(SpriteKind.Tower)) {
-        projectile = sprites.createProjectileFromSprite(img`
+    if (sprites.allOfKind(SpriteKind.Enemy).length > 0) {
+        for (let value of sprites.allOfKind(SpriteKind.Tower)) {
+            projectile = sprites.createProjectileFromSprite(img`
 a a 
 a a 
 `, value, 0, 20)
-        projectile.lifespan = 1000
-        projectile = sprites.createProjectileFromSprite(img`
+            projectile.lifespan = 1000
+            projectile = sprites.createProjectileFromSprite(img`
 a a 
 a a 
 `, value, 20, 0)
-        projectile.lifespan = 1000
-        projectile = sprites.createProjectileFromSprite(img`
+            projectile.lifespan = 1000
+            projectile = sprites.createProjectileFromSprite(img`
 a a 
 a a 
 `, value, 0, -20)
-        projectile.lifespan = 1000
-        projectile = sprites.createProjectileFromSprite(img`
+            projectile.lifespan = 1000
+            projectile = sprites.createProjectileFromSprite(img`
 a a 
 a a 
 `, value, -20, 0)
-        projectile.lifespan = 1000
+            projectile.lifespan = 1000
+        }
     }
 })
