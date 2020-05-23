@@ -194,9 +194,35 @@ f f f f f f f f f f f f f f f f
 . . . . . . . . . . . . . . . . 
 `
 }
+controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
+    minimapVisible = !(minimapVisible)
+    minimapSprite.setFlag(SpriteFlag.Invisible, !(minimapVisible))
+})
+sprites.onOverlap(SpriteKind.Enemy, SpriteKind.Projectile, function (sprite, otherSprite) {
+    sprite.destroy()
+    otherSprite.destroy()
+    info.changeScoreBy(1)
+})
+controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
+    build_tower()
+})
+info.onCountdownEnd(function () {
+    isSpawning = true
+    enemiesLeft = 20
+})
+scene.onOverlapTile(SpriteKind.Enemy, myTiles.tile2, function (sprite, location) {
+    sprite.destroy()
+    info.changeLifeBy(-1)
+})
 function build_tower () {
-    tiles.setTileAt(buildLoc, myTiles.tile9)
-    tower = sprites.create(img`
+    if (5 <= info.score()) {
+        buildLoc = tilemap.locationOfSprite(cursor)
+        if (tilemap.tileIs(buildLoc, myTiles.tile5) || tilemap.tileIs(buildLoc, myTiles.tile7)) {
+            tiles.setWallAt(buildLoc, true)
+            try_update_path()
+            if (newPath) {
+                tiles.setTileAt(buildLoc, myTiles.tile9)
+                tower = sprites.create(img`
 8 8 8 8 8 8 
 8 8 8 8 8 8 
 8 8 8 8 8 8 
@@ -204,51 +230,41 @@ function build_tower () {
 8 8 8 8 8 8 
 8 8 8 8 8 8 
 `, SpriteKind.Tower)
-    tiles.placeOnTile(tower, buildLoc)
-}
-controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
-    minimapVisible = !(minimapVisible)
-    minimapSprite.setFlag(SpriteFlag.Invisible, !(minimapVisible))
-})
-function update_path () {
-    buildLoc = tilemap.locationOfSprite(cursor)
-    if (tilemap.tileIs(buildLoc, myTiles.tile5) || tilemap.tileIs(buildLoc, myTiles.tile7)) {
-        tiles.setWallAt(buildLoc, true)
-        newPath = scene.aStar(spawnLoc, homeLoc)
-        if (newPath) {
-            build_tower()
-            path = newPath
-            for (let value of tiles.getTilesByType(myTiles.tile7)) {
-                tiles.setTileAt(value, myTiles.tile5)
+                tiles.placeOnTile(tower, buildLoc)
+                info.changeScoreBy(-5)
             }
-            for (let value2 of path) {
-                if (tilemap.tileIs(value2, myTiles.tile5)) {
-                    tiles.setTileAt(value2, myTiles.tile7)
-                }
-            }
-            for (let value of sprites.allOfKind(SpriteKind.Enemy)) {
-                scene.followPath(value, path, enemySpeed)
-            }
-        } else {
-            tiles.setWallAt(buildLoc, false)
-            cursor.say("I cannot build here", 1000)
         }
     }
 }
-controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
-    update_path()
-})
-scene.onOverlapTile(SpriteKind.Enemy, myTiles.tile2, function (sprite, location) {
-    sprite.destroy()
-    info.changeScoreBy(-1)
-})
+function try_update_path () {
+    newPath = scene.aStar(spawnLoc, homeLoc)
+    if (newPath) {
+        path = newPath
+        for (let value of tiles.getTilesByType(myTiles.tile7)) {
+            tiles.setTileAt(value, myTiles.tile5)
+        }
+        for (let value2 of path) {
+            if (tilemap.tileIs(value2, myTiles.tile5)) {
+                tiles.setTileAt(value2, myTiles.tile7)
+            }
+        }
+        for (let value of sprites.allOfKind(SpriteKind.Enemy)) {
+            scene.followPath(value, path, enemySpeed)
+        }
+    } else {
+        tiles.setWallAt(buildLoc, false)
+        cursor.say("I cannot build here", 1000)
+    }
+}
 let projectile: Sprite = null
 let mob: Sprite = null
 let minimap2: minimap.Minimap = null
 let path: tiles.Location[] = []
-let newPath: tiles.Location[] = []
 let tower: Sprite = null
+let newPath: tiles.Location[] = []
 let buildLoc: tiles.Location = null
+let enemiesLeft = 0
+let isSpawning = false
 let minimapSprite: Sprite = null
 let minimapVisible = false
 let spawnLoc: tiles.Location = null
@@ -322,7 +338,11 @@ minimapSprite = sprites.create(img`
 `, SpriteKind.HUD)
 minimapSprite.setFlag(SpriteFlag.RelativeToCamera, true)
 minimapSprite.z = 10
-update_path()
+try_update_path()
+info.startCountdown(10)
+info.setScore(20)
+info.setLife(3)
+isSpawning = false
 game.onUpdateInterval(100, function () {
     if (minimapVisible) {
         minimap2 = minimap.minimap(MinimapScale.Quarter, 100, 13)
@@ -335,8 +355,9 @@ game.onUpdateInterval(100, function () {
         minimap.includeSprite(minimap2, cursor, MinimapSpriteScale.Double)
     }
 })
-game.onUpdateInterval(200, function () {
-    mob = sprites.create(img`
+game.onUpdateInterval(500, function () {
+    if (isSpawning && 0 < enemiesLeft) {
+        mob = sprites.create(img`
 . . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . . 
@@ -354,16 +375,34 @@ game.onUpdateInterval(200, function () {
 . . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . . 
 `, SpriteKind.Enemy)
-    tiles.placeOnRandomTile(mob, myTiles.tile4)
-    scene.followPath(mob, path, enemySpeed)
-    info.changeScoreBy(1)
+        enemiesLeft += -1
+        tiles.placeOnRandomTile(mob, myTiles.tile4)
+        if (path) {
+            scene.followPath(mob, path, enemySpeed)
+        }
+    }
 })
-game.onUpdateInterval(500, function () {
+game.onUpdateInterval(1000, function () {
     for (let value of sprites.allOfKind(SpriteKind.Tower)) {
         projectile = sprites.createProjectileFromSprite(img`
 a a 
 a a 
 `, value, 0, 20)
+        projectile.lifespan = 1000
+        projectile = sprites.createProjectileFromSprite(img`
+a a 
+a a 
+`, value, 20, 0)
+        projectile.lifespan = 1000
+        projectile = sprites.createProjectileFromSprite(img`
+a a 
+a a 
+`, value, 0, -20)
+        projectile.lifespan = 1000
+        projectile = sprites.createProjectileFromSprite(img`
+a a 
+a a 
+`, value, -20, 0)
         projectile.lifespan = 1000
     }
 })

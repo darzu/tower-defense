@@ -3,7 +3,7 @@
     "dependencies": {
         "device": "*",
         "tilemaps": "github:microsoft/pxt-tilemaps#v1.7.1",
-        "arcade-tilemap-a-star": "github:jwunderl/arcade-tilemap-a-star#master",
+        "arcade-tilemap-a-star": "github:jwunderl/arcade-tilemap-a-star#v0.2.1",
         "arcade-minimap": "github:darzu/arcade-minimap#v0.4.1"
     },
     "description": "",
