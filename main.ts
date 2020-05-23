@@ -243,15 +243,16 @@ info.onCountdownEnd(function () {
     enemiesLeft = nextWaveSize
     nextWaveSize += 20
     nextWaveTime += 5
+    enemySpeed += 2
 })
 scene.onOverlapTile(SpriteKind.Enemy, myTiles.tile2, function (sprite, location) {
     sprite.destroy()
     info.changeLifeBy(-1)
 })
 function build_tower () {
-    if (5 <= info.score()) {
-        buildLoc = tilemap.locationOfSprite(cursor)
-        if (tilemap.tileIs(buildLoc, myTiles.tile5) || tilemap.tileIs(buildLoc, myTiles.tile7)) {
+    buildLoc = tilemap.locationOfSprite(cursor)
+    if (tilemap.tileIs(buildLoc, myTiles.tile5) || tilemap.tileIs(buildLoc, myTiles.tile7)) {
+        if (5 <= info.score()) {
             tiles.setWallAt(buildLoc, true)
             try_update_path()
             if (newPath) {
@@ -268,6 +269,16 @@ function build_tower () {
                 info.changeScoreBy(-5)
             }
         }
+    } else if (tilemap.tileIs(buildLoc, myTiles.tile9)) {
+        tiles.setWallAt(buildLoc, false)
+        tiles.setTileAt(buildLoc, myTiles.tile5)
+        for (let value of sprites.allOfKind(SpriteKind.Tower)) {
+            if (value.tileKindAt(TileDirection.Center, myTiles.tile5)) {
+                value.destroy()
+            }
+        }
+        info.changeScoreBy(5)
+        try_update_path()
     }
 }
 function try_update_path () {
@@ -376,7 +387,7 @@ minimapSprite.z = 10
 try_update_path()
 enemySpeed = 10
 isSpawning = false
-nextWaveSize = 20
+nextWaveSize = 5
 let nextWaveTime = 2
 info.startCountdown(nextWaveTime)
 info.setScore(20)
