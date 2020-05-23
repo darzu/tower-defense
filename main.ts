@@ -1,5 +1,6 @@
 namespace SpriteKind {
     export const HUD = SpriteKind.create()
+    export const Tower = SpriteKind.create()
 }
 namespace myTiles {
     //% blockIdentity=images._tile
@@ -193,49 +194,61 @@ f f f f f f f f f f f f f f f f
 . . . . . . . . . . . . . . . . 
 `
 }
+function build_tower () {
+    tiles.setTileAt(buildLoc, myTiles.tile9)
+    tower = sprites.create(img`
+8 8 8 8 8 8 
+8 8 8 8 8 8 
+8 8 8 8 8 8 
+8 8 8 8 8 8 
+8 8 8 8 8 8 
+8 8 8 8 8 8 
+`, SpriteKind.Tower)
+    tiles.placeOnTile(tower, buildLoc)
+}
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
     minimapVisible = !(minimapVisible)
     minimapSprite.setFlag(SpriteFlag.Invisible, !(minimapVisible))
 })
 function update_path () {
-    newPath = scene.aStar(spawnLoc, homeLoc)
-    if (newPath) {
-        path = newPath
-        for (let value of tiles.getTilesByType(myTiles.tile7)) {
-            tiles.setTileAt(value, myTiles.tile5)
-        }
-        for (let value2 of path) {
-            if (tilemap.tileIs(value2, myTiles.tile5)) {
-                tiles.setTileAt(value2, myTiles.tile7)
-            }
-        }
-        for (let value of sprites.allOfKind(SpriteKind.Enemy)) {
-            scene.followPath(value, path, enemySpeed)
-        }
-    }
-}
-controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     buildLoc = tilemap.locationOfSprite(cursor)
     if (tilemap.tileIs(buildLoc, myTiles.tile5) || tilemap.tileIs(buildLoc, myTiles.tile7)) {
         tiles.setWallAt(buildLoc, true)
-        update_path()
+        newPath = scene.aStar(spawnLoc, homeLoc)
         if (newPath) {
-            tiles.setTileAt(buildLoc, myTiles.tile9)
+            build_tower()
+            path = newPath
+            for (let value of tiles.getTilesByType(myTiles.tile7)) {
+                tiles.setTileAt(value, myTiles.tile5)
+            }
+            for (let value2 of path) {
+                if (tilemap.tileIs(value2, myTiles.tile5)) {
+                    tiles.setTileAt(value2, myTiles.tile7)
+                }
+            }
+            for (let value of sprites.allOfKind(SpriteKind.Enemy)) {
+                scene.followPath(value, path, enemySpeed)
+            }
         } else {
             tiles.setWallAt(buildLoc, false)
             cursor.say("I cannot build here", 1000)
         }
     }
+}
+controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
+    update_path()
 })
 scene.onOverlapTile(SpriteKind.Enemy, myTiles.tile2, function (sprite, location) {
     sprite.destroy()
     info.changeScoreBy(-1)
 })
+let projectile: Sprite = null
 let mob: Sprite = null
 let minimap2: minimap.Minimap = null
-let buildLoc: tiles.Location = null
 let path: tiles.Location[] = []
 let newPath: tiles.Location[] = []
+let tower: Sprite = null
+let buildLoc: tiles.Location = null
 let minimapSprite: Sprite = null
 let minimapVisible = false
 let spawnLoc: tiles.Location = null
@@ -244,36 +257,22 @@ let cursor: Sprite = null
 let enemySpeed = 0
 enemySpeed = 20
 tiles.setTilemap(tiles.createTilemap(
-            hex`20001c000505050505050505050505050505050505050505050505050505050505050505050205050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050504050505050505050505050505050505050505050505050505050505050505050505`,
+            hex`10000e000505050505050505050505050505050505020505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505040505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505`,
             img`
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . 
 `,
             [myTiles.tile0,myTiles.tile1,myTiles.tile2,myTiles.tile3,myTiles.tile4,myTiles.tile5,myTiles.tile6,myTiles.tile7,myTiles.tile8,myTiles.tile9],
             TileScale.Sixteen
@@ -297,8 +296,7 @@ cursor = sprites.create(img`
 . . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . . 
 `, SpriteKind.Player)
-controller.moveSprite(cursor, 150, 150)
-scene.cameraFollowSprite(cursor)
+controller.moveSprite(cursor, 100, 100)
 cursor.setFlag(SpriteFlag.StayInScreen, true)
 cursor.setFlag(SpriteFlag.Ghost, true)
 homeLoc = tiles.getTilesByType(myTiles.tile2)[0]
@@ -359,4 +357,13 @@ game.onUpdateInterval(200, function () {
     tiles.placeOnRandomTile(mob, myTiles.tile4)
     scene.followPath(mob, path, enemySpeed)
     info.changeScoreBy(1)
+})
+game.onUpdateInterval(500, function () {
+    for (let value of sprites.allOfKind(SpriteKind.Tower)) {
+        projectile = sprites.createProjectileFromSprite(img`
+a a 
+a a 
+`, value, 0, 20)
+        projectile.lifespan = 1000
+    }
 })
